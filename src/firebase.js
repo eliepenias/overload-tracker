@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeAuth, indexedDBLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 
 // ---------------------------------------------------------------------------
@@ -23,7 +23,18 @@ export const firebaseConfigured = firebaseConfig.apiKey !== 'YOUR_API_KEY';
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// getAuth()'s auto-detected persistence is one of the things that makes the
+// signInWithRedirect flow unreliable on iOS Safari (16.1+) and inside
+// home-screen standalone PWAs — Safari's storage partitioning can drop the
+// "pending redirect" state Firebase writes right before sending you to
+// Google, so getRedirectResult() silently comes back empty. Being explicit
+// about persistence + resolver here doesn't fix that on its own, but it's a
+// prerequisite for the signInWithPopup flow in SignIn.jsx, which is the
+// actual fix (see comments there).
+export const auth = initializeAuth(app, {
+  persistence: indexedDBLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver,
+});
 export const googleProvider = new GoogleAuthProvider();
 
 // Persistent local cache keeps the app working offline and syncs automatically

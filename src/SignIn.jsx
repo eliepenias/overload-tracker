@@ -1,17 +1,43 @@
-import { signInWithRedirect } from 'firebase/auth';
+import { useState } from 'react';
+import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { auth, googleProvider, firebaseConfigured } from './firebase';
 
 export default function SignIn({ error }) {
+  const [localError, setLocalError] = useState(null);
+
   const handleSignIn = async () => {
+    setLocalError(null);
     try {
-      // Redirect (not popup) — popups can't hand off auth results back into
-      // a standalone home-screen web app on iOS, since it's a separate
-      // browsing context from Safari. Redirect works everywhere.
-      await signInWithRedirect(auth, googleProvider);
+      // Popup, not redirect: signInWithRedirect is what's actually broken here.
+      // Safari 16.1+ (iOS Safari and, worse, standalone home-screen PWAs)
+      // partitions the storage Firebase relies on to remember "a redirect is
+      // in progress" across the trip to accounts.google.com and back. So
+      // getRedirectResult() comes back with no user and no error, and you
+      // just land back on this button. A popup keeps this window alive the
+      // whole time and hands back the result via postMessage instead, which
+      // sidesteps that bug entirely and works fine in standalone mode too.
+      await signInWithPopup(auth, googleProvider);
     } catch (err) {
+      if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
+        // User closed/dismissed it — not a real error, don't show anything.
+        return;
+      }
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+        // Rare fallback path — some in-app browsers block window.open().
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (err2) {
+          console.error('Sign-in failed:', err2);
+          setLocalError(err2.code || 'Sign-in failed. Please try again.');
+        }
+        return;
+      }
       console.error('Sign-in failed:', err);
+      setLocalError(err.code || 'Sign-in failed. Please try again.');
     }
   };
+
+  const shownError = error || localError;
 
   return (
     <div className="app-shell">
@@ -21,10 +47,10 @@ export default function SignIn({ error }) {
           <div className="page-sub" style={{ marginTop: 8 }}>Sign in to sync your workouts across every device.</div>
         </div>
 
-        {error && (
+        {shownError && (
           <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: 16 }}>
             <div style={{ fontSize: 13.5, color: 'var(--danger)' }}>
-              Sign-in failed: {error}. If you're using the home-screen app, make sure this domain is added under Firebase Authentication &rarr; Settings &rarr; Authorized domains.
+              Sign-in failed: {shownError}. If you're using the home-screen app, make sure this domain is added under Firebase Authentication &rarr; Settings &rarr; Authorized domains.
             </div>
           </div>
         )}
