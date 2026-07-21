@@ -1,10 +1,13 @@
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithRedirect } from 'firebase/auth';
 import { auth, googleProvider, firebaseConfigured } from './firebase';
 
-export default function SignIn() {
+export default function SignIn({ error }) {
   const handleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      // Redirect (not popup) — popups can't hand off auth results back into
+      // a standalone home-screen web app on iOS, since it's a separate
+      // browsing context from Safari. Redirect works everywhere.
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
       console.error('Sign-in failed:', err);
     }
@@ -17,6 +20,14 @@ export default function SignIn() {
           <div className="brand" style={{ justifyContent: 'center', fontSize: 44 }}>OVERLOAD<span className="dot">.</span></div>
           <div className="page-sub" style={{ marginTop: 8 }}>Sign in to sync your workouts across every device.</div>
         </div>
+
+        {error && (
+          <div className="card" style={{ borderColor: 'var(--danger)', marginBottom: 16 }}>
+            <div style={{ fontSize: 13.5, color: 'var(--danger)' }}>
+              Sign-in failed: {error}. If you're using the home-screen app, make sure this domain is added under Firebase Authentication &rarr; Settings &rarr; Authorized domains.
+            </div>
+          </div>
+        )}
 
         {!firebaseConfigured ? (
           <div className="card" style={{ borderColor: 'var(--danger)' }}>

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getRedirectResult } from 'firebase/auth';
 import { auth, firebaseConfigured } from './firebase';
 import { useCloudData } from './useCloudData';
 import * as db from './db';
@@ -15,11 +15,22 @@ import { HomeIcon, HistoryIcon, ChartIcon } from './icons';
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking, null = signed out
+  const [authError, setAuthError] = useState(null);
   const [view, setView] = useState({ name: 'home' });
   const [tab, setTab] = useState('home');
 
   useEffect(() => {
     if (!firebaseConfigured) { setUser(null); return; }
+
+    // Completes the sign-in if we just came back from a redirect (e.g. Google auth).
+    // onAuthStateChanged below will also fire once this resolves, but checking the
+    // result directly lets us surface a clear error if the redirect itself failed
+    // (e.g. the domain isn't in Firebase's authorized domains list).
+    getRedirectResult(auth).catch((err) => {
+      console.error('Redirect sign-in failed:', err);
+      setAuthError(err.code || 'Sign-in failed. Please try again.');
+    });
+
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
@@ -62,7 +73,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <SignIn />;
+    return <SignIn error={authError} />;
   }
 
   if (loading || !data) {
