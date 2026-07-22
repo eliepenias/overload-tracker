@@ -2,20 +2,46 @@ import { useState } from 'react';
 import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { auth, googleProvider, firebaseConfigured } from './firebase';
 
+// True when launched from the home-screen icon (iOS standalone) rather than
+// a regular Safari tab. navigator.standalone is the iOS-specific signal;
+// the media query is the cross-browser equivalent.
+function isStandalone() {
+  return (
+    window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+  );
+}
+
 export default function SignIn({ error }) {
   const [localError, setLocalError] = useState(null);
 
   const handleSignIn = async () => {
     setLocalError(null);
+
+    if (isStandalone()) {
+      // In the installed home-screen app, signInWithPopup calls window.open(),
+      // which on iOS breaks OUT of the standalone app into a separate Safari
+      // window — severing the postMessage channel Firebase needs to hand
+      // back the result, so you land back on this button with nothing.
+      // signInWithRedirect instead does a plain top-level navigation
+      // (location.href), which iOS keeps inside the installed app's own
+      // browsing context (Apple fixed this back in iOS 12.2), so the trip
+      // to accounts.google.com and back stays in-app and getRedirectResult()
+      // (handled in App.jsx) picks up the result on return.
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (err) {
+        console.error('Sign-in failed:', err);
+        setLocalError(err.code || 'Sign-in failed. Please try again.');
+      }
+      return;
+    }
+
     try {
-      // Popup, not redirect: signInWithRedirect is what's actually broken here.
-      // Safari 16.1+ (iOS Safari and, worse, standalone home-screen PWAs)
-      // partitions the storage Firebase relies on to remember "a redirect is
-      // in progress" across the trip to accounts.google.com and back. So
-      // getRedirectResult() comes back with no user and no error, and you
-      // just land back on this button. A popup keeps this window alive the
-      // whole time and hands back the result via postMessage instead, which
-      // sidesteps that bug entirely and works fine in standalone mode too.
+      // In a normal Safari tab, popup is what works: it sidesteps the Safari
+      // 16.1+ bug where getRedirectResult() silently comes back empty after
+      // a signInWithRedirect trip, because the popup never leaves this
+      // window in the first place.
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
       if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
@@ -23,7 +49,6 @@ export default function SignIn({ error }) {
         return;
       }
       if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-        // Rare fallback path — some in-app browsers block window.open().
         try {
           await signInWithRedirect(auth, googleProvider);
         } catch (err2) {
