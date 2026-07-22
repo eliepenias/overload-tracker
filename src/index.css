@@ -399,6 +399,90 @@ main {
 .num-input.filled { border-color: var(--gain-dim); color: var(--gain); }
 .num-input::placeholder { color: var(--text-faint); font-weight: 400; }
 
+/* ---------- exercise video (YouTube Shorts) panel ---------- */
+.yt-panel-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.yt-toggle { color: var(--text-dim); }
+.yt-toggle:active, .yt-panel-wrap:has(.yt-panel) .yt-toggle { color: var(--accent); border-color: var(--accent-dim); }
+
+.yt-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  width: 240px;
+  max-width: calc(100vw - 72px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--iron);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.45);
+}
+.yt-status {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 6px 2px;
+}
+.yt-status-warn { color: var(--text-dim); }
+.yt-status-warn code {
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+.yt-status .link-btn { display: block; margin-top: 4px; padding: 0; }
+
+.yt-frame-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.yt-frame-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.yt-title {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.yt-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.yt-controls .icon-btn { width: 36px; height: 36px; }
+.yt-controls .icon-btn:disabled { opacity: 0.3; cursor: default; }
+.yt-fav.active { color: var(--gain); border-color: var(--gain-dim); }
+
+.yt-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--iron);
+  border-top-color: var(--text-dim);
+  border-radius: 50%;
+  animation: yt-spin 0.7s linear infinite;
+}
+@keyframes yt-spin { to { transform: rotate(360deg); } }
+
 .ex-card-foot {
   display: flex;
   justify-content: space-between;

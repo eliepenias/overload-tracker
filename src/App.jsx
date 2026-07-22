@@ -59,6 +59,9 @@ export default function App() {
   const handleDeleteSession = useCallback((sessionId) => {
     mutate((prev) => db.deleteSession(prev, sessionId));
   }, [mutate]);
+  const handleToggleFavoriteVideo = useCallback((exerciseName, video) => {
+    mutate((prev) => db.toggleFavoriteVideo(prev, exerciseName, video));
+  }, [mutate]);
   const handleSignOut = useCallback(() => { signOut(auth); }, []);
 
   // still resolving auth state
@@ -106,6 +109,7 @@ export default function App() {
         dayKey={view.dayKey}
         onFinish={handleFinishWorkout}
         onCancel={() => { setTab('home'); setView({ name: 'home' }); }}
+        onToggleFavoriteVideo={handleToggleFavoriteVideo}
       />
     );
   } else if (tab === 'history') {

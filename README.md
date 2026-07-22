@@ -11,6 +11,7 @@ A mobile-first Push/Pull/Legs workout tracker. Sign in with Google and your data
 - Full workout history with delete
 - Per-exercise progress graphs (weight over time) with a PR badge and trend delta
 - Google sign-in, data synced across devices via Firestore, works offline with automatic sync when back online
+- YouTube Shorts button on each exercise during a workout — auto-searches a demo video by exercise name, with Previous/Next to browse more and a favorite button; favorited videos show up first next time
 
 ## One-time Firebase setup
 
@@ -24,6 +25,16 @@ A mobile-first Push/Pull/Legs workout tracker. Sign in with Google and your data
 8. Back in **Authentication → Settings → Authorized domains**, click **Add domain** and add your GitHub Pages domain, e.g. `<your-username>.github.io`. Without this, Google sign-in will fail once deployed (localhost is allowed by default for local dev).
 
 That's it — no billing required, this all runs comfortably inside Firebase's free Spark plan for personal use.
+
+## One-time YouTube setup (optional, for exercise demo Shorts)
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and select or create a project (can be the same project you used for Firebase, or a separate one).
+2. In the left sidebar, go to **APIs & Services → Library**, search for **YouTube Data API v3**, and click **Enable**.
+3. Go to **APIs & Services → Credentials → Create Credentials → API key**. Copy the key.
+4. (Recommended) Click **Edit** on the new key and restrict it: under **API restrictions**, limit it to **YouTube Data API v3**. Under **Application restrictions**, choose **HTTP referrers** and add `localhost/*` and your GitHub Pages domain, e.g. `<your-username>.github.io/*`.
+5. Open `src/youtube.js` and replace the placeholder `YOUTUBE_API_KEY` value with your key.
+
+The free quota (10,000 units/day) comfortably covers personal use — each search costs about 100 units. Without a key configured, the YouTube button still appears but shows a message instead of search results.
 
 ## Run it locally
 

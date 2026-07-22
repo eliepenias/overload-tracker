@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { BackIcon } from '../icons';
 import NumberField from './NumberField';
-import { getPreviousPerformance, uid } from '../db';
+import ExerciseVideoPanel from './ExerciseVideoPanel';
+import { getPreviousPerformance, getFavoriteVideos, uid } from '../db';
 
 function buildInitialEntries(day) {
   return day.exercises.map((ex) => ({
@@ -14,7 +15,7 @@ function buildInitialEntries(day) {
   }));
 }
 
-export default function ActiveWorkout({ data, dayKey, existingSession, onFinish, onCancel }) {
+export default function ActiveWorkout({ data, dayKey, existingSession, onFinish, onCancel, onToggleFavoriteVideo }) {
   const day = data.days[dayKey];
   const [entries, setEntries] = useState(() => existingSession?.entries || buildInitialEntries(day));
   const sessionDate = existingSession?.date || new Date().toISOString();
@@ -84,6 +85,11 @@ export default function ActiveWorkout({ data, dayKey, existingSession, onFinish,
                   <div className="name stencil">{entry.name}</div>
                   <div className="target">Target: {entry.repMin}-{entry.repMax} reps</div>
                 </div>
+                <ExerciseVideoPanel
+                  exerciseName={entry.name}
+                  favorites={getFavoriteVideos(data, entry.name)}
+                  onToggleFavorite={(video) => onToggleFavoriteVideo(entry.name, video)}
+                />
               </div>
 
               <div className="eyebrow" style={{ marginBottom: 6 }}>Previous</div>

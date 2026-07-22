@@ -13,7 +13,10 @@
 //     { id, dayKey, dayLabel, date (ISO), entries: [
 //         { exerciseId, name, repMin, repMax, sets: [{ weight, reps, done }], skipped }
 //     ] }
-//   ]
+//   ],
+//   youtubeFavorites: {
+//     [exerciseName]: [ { videoId, title, channelTitle, thumbnail }, ... ]  // most-recent-first
+//   }
 // }
 
 const DAY_META = {
@@ -69,12 +72,14 @@ function defaultData() {
       },
     },
     sessions: [],
+    youtubeFavorites: {},
   };
 }
 
 // guard against a malformed/partial doc coming back from Firestore
 function normalize(raw) {
   if (!raw || !raw.days || !raw.sessions) return defaultData();
+  if (!raw.youtubeFavorites) raw.youtubeFavorites = {};
   return raw;
 }
 
@@ -183,6 +188,29 @@ function getLoggedExerciseNames(data) {
   return Array.from(names).sort();
 }
 
+// ---------- YouTube Shorts favorites (per exercise name) ----------
+
+function getFavoriteVideos(data, exerciseName) {
+  return (data.youtubeFavorites && data.youtubeFavorites[exerciseName]) || [];
+}
+
+function isVideoFavorited(data, exerciseName, videoId) {
+  return getFavoriteVideos(data, exerciseName).some((v) => v.videoId === videoId);
+}
+
+// Adds the video to the front of that exercise's favorites list, or removes
+// it if it's already favorited. Returns new data (caller persists it).
+function toggleFavoriteVideo(data, exerciseName, video) {
+  const next = structuredClone(data);
+  if (!next.youtubeFavorites) next.youtubeFavorites = {};
+  const existing = next.youtubeFavorites[exerciseName] || [];
+  const already = existing.some((v) => v.videoId === video.videoId);
+  next.youtubeFavorites[exerciseName] = already
+    ? existing.filter((v) => v.videoId !== video.videoId)
+    : [{ videoId: video.videoId, title: video.title, channelTitle: video.channelTitle, thumbnail: video.thumbnail }, ...existing];
+  return next;
+}
+
 export {
   uid,
   DAY_META,
@@ -197,4 +225,7 @@ export {
   getPreviousPerformance,
   getExerciseHistory,
   getLoggedExerciseNames,
+  getFavoriteVideos,
+  isVideoFavorited,
+  toggleFavoriteVideo,
 };
