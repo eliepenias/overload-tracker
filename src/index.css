@@ -66,7 +66,6 @@ input:focus-visible, button:focus-visible, select:focus-visible {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ---------- typography helpers ---------- */
@@ -97,7 +96,7 @@ input:focus-visible, button:focus-visible, select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px 14px;
+  padding: calc(18px + env(safe-area-inset-top)) 20px 14px;
   background: linear-gradient(to bottom, var(--bg) 70%, rgba(14,13,12,0));
   backdrop-filter: blur(6px);
 }
