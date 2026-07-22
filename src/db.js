@@ -144,7 +144,7 @@ function getPreviousPerformance(data, dayKey, exerciseName, beforeDate) {
   for (const session of sessions) {
     const entry = session.entries.find((e) => e.name === exerciseName && !e.skipped);
     if (entry) {
-      const completedSets = entry.sets.filter((s) => s.done && s.weight !== '' && s.reps !== '');
+      const completedSets = entry.sets.filter((s) => s.weight !== '' && s.reps !== '');
       if (completedSets.length > 0) {
         return { date: session.date, sets: completedSets };
       }
@@ -160,7 +160,7 @@ function getExerciseHistory(data, exerciseName) {
   for (const session of sorted) {
     const entry = session.entries.find((e) => e.name === exerciseName && !e.skipped);
     if (!entry) continue;
-    const completedSets = entry.sets.filter((s) => s.done && s.weight !== '' && s.reps !== '');
+    const completedSets = entry.sets.filter((s) => s.weight !== '' && s.reps !== '');
     if (completedSets.length === 0) continue;
     const best = completedSets.reduce((a, b) => (Number(b.weight) > Number(a.weight) ? b : a));
     const totalVolume = completedSets.reduce((sum, s) => sum + Number(s.weight) * Number(s.reps), 0);
@@ -178,7 +178,7 @@ function getExerciseHistory(data, exerciseName) {
 function getLoggedExerciseNames(data) {
   const names = new Set();
   data.sessions.forEach((s) => s.entries.forEach((e) => {
-    if (!e.skipped && e.sets.some((set) => set.done)) names.add(e.name);
+    if (!e.skipped && e.sets.some((set) => set.weight !== '' && set.reps !== '')) names.add(e.name);
   }));
   return Array.from(names).sort();
 }

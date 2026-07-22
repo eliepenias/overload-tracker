@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BackIcon, CheckIcon } from '../icons';
+import { BackIcon } from '../icons';
 import NumberField from './NumberField';
 import { getPreviousPerformance, uid } from '../db';
 
@@ -10,7 +10,7 @@ function buildInitialEntries(day) {
     repMin: ex.repMin,
     repMax: ex.repMax,
     skipped: false,
-    sets: Array.from({ length: ex.sets }, () => ({ weight: '', reps: '', done: false })),
+    sets: Array.from({ length: ex.sets }, () => ({ weight: '', reps: '' })),
   }));
 }
 
@@ -25,15 +25,6 @@ export default function ActiveWorkout({ data, dayKey, existingSession, onFinish,
       const next = structuredClone(prev);
       next[exIdx].sets[setIdx][field] = value;
       next[exIdx].skipped = false;
-      return next;
-    });
-  };
-
-  const toggleDone = (exIdx, setIdx) => {
-    setEntries((prev) => {
-      const next = structuredClone(prev);
-      const set = next[exIdx].sets[setIdx];
-      set.done = !set.done;
       return next;
     });
   };
@@ -130,13 +121,6 @@ export default function ActiveWorkout({ data, dayKey, existingSession, onFinish,
                     filled={set.reps !== ''}
                     onChange={(v) => updateSet(exIdx, setIdx, 'reps', v)}
                   />
-                  <button
-                    className={`set-check${set.done ? ' done' : ''}`}
-                    onClick={() => toggleDone(exIdx, setIdx)}
-                    aria-label="Mark set complete"
-                  >
-                    <CheckIcon width={16} height={16} />
-                  </button>
                 </div>
               ))}
 

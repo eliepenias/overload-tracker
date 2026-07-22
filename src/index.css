@@ -358,7 +358,7 @@ main {
 
 .set-row {
   display: grid;
-  grid-template-columns: 26px 1fr 1fr 40px;
+  grid-template-columns: 26px 1fr 1fr;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
@@ -398,24 +398,6 @@ main {
 }
 .num-input.filled { border-color: var(--gain-dim); color: var(--gain); }
 .num-input::placeholder { color: var(--text-faint); font-weight: 400; }
-
-.set-check {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  border: 1px solid var(--iron);
-  background: var(--bg-elevated);
-  color: var(--text-faint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.set-check.done {
-  background: var(--gain-dim);
-  border-color: var(--gain);
-  color: var(--gain);
-}
 
 .ex-card-foot {
   display: flex;
