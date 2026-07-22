@@ -19,15 +19,10 @@ export default function SignIn({ error }) {
     setLocalError(null);
 
     if (isStandalone()) {
-      // In the installed home-screen app, signInWithPopup calls window.open(),
-      // which on iOS breaks OUT of the standalone app into a separate Safari
-      // window — severing the postMessage channel Firebase needs to hand
-      // back the result, so you land back on this button with nothing.
-      // signInWithRedirect instead does a plain top-level navigation
-      // (location.href), which iOS keeps inside the installed app's own
-      // browsing context (Apple fixed this back in iOS 12.2), so the trip
-      // to accounts.google.com and back stays in-app and getRedirectResult()
-      // (handled in App.jsx) picks up the result on return.
+      // Installed home-screen app: signInWithPopup's window.open() breaks out
+      // to a separate Safari instance on iOS, losing the channel back to this
+      // page. signInWithRedirect's plain top-level navigation stays inside
+      // the app's own context instead.
       try {
         await signInWithRedirect(auth, googleProvider);
       } catch (err) {
@@ -37,11 +32,9 @@ export default function SignIn({ error }) {
       return;
     }
 
+    // Regular browser tab: popup avoids the Safari 16.1+ bug where
+    // getRedirectResult() can silently come back empty after a redirect trip.
     try {
-      // In a normal Safari tab, popup is what works: it sidesteps the Safari
-      // 16.1+ bug where getRedirectResult() silently comes back empty after
-      // a signInWithRedirect trip, because the popup never leaves this
-      // window in the first place.
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
       if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {

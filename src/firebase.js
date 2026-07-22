@@ -10,7 +10,7 @@ import { getFirestore, initializeFirestore, persistentLocalCache, persistentSing
 // ---------------------------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyB5GqanO_vR0wSQSNOgExAOrARA7smhBaw",
-  authDomain: "overload-workout.firebaseapp.com",
+  authDomain: "overload-workout.web.app",
   projectId: "overload-workout",
   storageBucket: "overload-workout.firebasestorage.app",
   messagingSenderId: "862149813578",
