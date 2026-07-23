@@ -1,10 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function ExerciseFormSheet({ initial, onSave, onClose }) {
   const [name, setName] = useState(initial?.name || '');
   const [sets, setSets] = useState(initial?.sets ?? 3);
   const [repMin, setRepMin] = useState(initial?.repMin ?? 8);
   const [repMax, setRepMax] = useState(initial?.repMax ?? 12);
+  const backdropRef = useRef(null);
+
+  // iOS shrinks the *visual* viewport when the keyboard opens but leaves the
+  // layout viewport (and therefore `vh`/`vw`/fixed-position sizing) alone, so
+  // a bottom sheet ends up positioned partly behind the keyboard. Track the
+  // visual viewport directly and resize/reposition the backdrop to match it.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const el = backdropRef.current;
+      if (!el) return;
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   const valid = name.trim().length > 0 && sets > 0 && repMin > 0 && repMax >= repMin;
 
@@ -19,7 +42,7 @@ export default function ExerciseFormSheet({ initial, onSave, onClose }) {
   };
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
+    <div className="sheet-backdrop" ref={backdropRef} onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <div className="sheet-title">{initial ? 'Edit Exercise' : 'Add Exercise'}</div>

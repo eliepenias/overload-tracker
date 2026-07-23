@@ -188,6 +188,23 @@ function getLoggedExerciseNames(data) {
   return Array.from(names).sort();
 }
 
+// Same as getLoggedExerciseNames, but grouped by the day (push/pull/legs) each
+// exercise was logged under — for the Progress tab's exercise picker.
+function getLoggedExerciseNamesByDay(data) {
+  const byDay = {};
+  Object.keys(DAY_META).forEach((key) => { byDay[key] = new Set(); });
+  data.sessions.forEach((s) => {
+    const bucket = byDay[s.dayKey];
+    if (!bucket) return;
+    s.entries.forEach((e) => {
+      if (!e.skipped && e.sets.some((set) => set.weight !== '' && set.reps !== '')) bucket.add(e.name);
+    });
+  });
+  const grouped = {};
+  Object.keys(byDay).forEach((key) => { grouped[key] = Array.from(byDay[key]).sort(); });
+  return grouped;
+}
+
 // ---------- YouTube Shorts favorites (per exercise name) ----------
 
 function getFavoriteVideos(data, exerciseName) {
@@ -225,6 +242,7 @@ export {
   getPreviousPerformance,
   getExerciseHistory,
   getLoggedExerciseNames,
+  getLoggedExerciseNamesByDay,
   getFavoriteVideos,
   isVideoFavorited,
   toggleFavoriteVideo,

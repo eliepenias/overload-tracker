@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Dot } from 'recharts';
-import { getExerciseHistory, getLoggedExerciseNames } from '../db';
+import { getExerciseHistory, getLoggedExerciseNamesByDay, DAY_META } from '../db';
 
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -29,7 +29,11 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function Progress({ data }) {
-  const exerciseNames = useMemo(() => getLoggedExerciseNames(data), [data]);
+  const grouped = useMemo(() => getLoggedExerciseNamesByDay(data), [data]);
+  const exerciseNames = useMemo(
+    () => Object.keys(DAY_META).flatMap((key) => grouped[key]),
+    [grouped]
+  );
   const [selected, setSelected] = useState(exerciseNames[0] || null);
 
   const active = selected && exerciseNames.includes(selected) ? selected : exerciseNames[0];
@@ -57,16 +61,23 @@ export default function Progress({ data }) {
           </div>
         ) : (
           <>
-            <div className="pill-tabs">
-              {exerciseNames.map((name) => (
-                <button
-                  key={name}
-                  className={`pill${name === active ? ' active' : ''}`}
-                  onClick={() => setSelected(name)}
-                >
-                  {name}
-                </button>
-              ))}
+            <div className="form-field">
+              <label>Exercise</label>
+              <select
+                className="select-input"
+                value={active || ''}
+                onChange={(e) => setSelected(e.target.value)}
+              >
+                {Object.keys(DAY_META).map((key) => (
+                  grouped[key].length > 0 && (
+                    <optgroup key={key} label={DAY_META[key].label}>
+                      {grouped[key].map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </optgroup>
+                  )
+                ))}
+              </select>
             </div>
 
             <div className="chart-wrap">
