@@ -8,16 +8,21 @@ import WorkoutBuilder from './components/WorkoutBuilder';
 import ActiveWorkout from './components/ActiveWorkout';
 import History from './components/History';
 import Progress from './components/Progress';
+import TabSwiper from './components/TabSwiper';
+import PushScreen from './components/PushScreen';
 import SignIn from './SignIn';
 import { HomeIcon, HistoryIcon, ChartIcon } from './icons';
 
-// view = { name: 'home' | 'build' | 'active' | 'history' | 'progress', dayKey?, session? }
+// overlay = { type: 'active' | 'build', dayKey, session? } | null
+// A pushed screen (Start Workout / Build) layered on top of the swipeable
+// Home/History/Progress tabs, animated in and out like an iOS nav push.
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = still checking, null = signed out
   const [authError, setAuthError] = useState(null);
-  const [view, setView] = useState({ name: 'home' });
   const [tab, setTab] = useState('home');
+  const [overlay, setOverlay] = useState(null);
+  const [overlayClosing, setOverlayClosing] = useState(false);
 
   useEffect(() => {
     if (!firebaseConfigured) { setUser(null); return; }
@@ -37,7 +42,10 @@ export default function App() {
 
   const { data, loading, mutate } = useCloudData(user);
 
-  const goTab = (t) => { setTab(t); setView({ name: t }); };
+  const openActive = useCallback((dayKey) => { setOverlayClosing(false); setOverlay({ type: 'active', dayKey }); }, []);
+  const openBuild = useCallback((dayKey) => { setOverlayClosing(false); setOverlay({ type: 'build', dayKey }); }, []);
+  const requestCloseOverlay = useCallback(() => setOverlayClosing(true), []);
+  const handleOverlayClosed = useCallback(() => { setOverlay(null); setOverlayClosing(false); }, []);
 
   const handleAddExercise = useCallback((dayKey, ex) => {
     mutate((prev) => db.addExercise(prev, dayKey, ex));
@@ -54,8 +62,8 @@ export default function App() {
   const handleFinishWorkout = useCallback((session) => {
     mutate((prev) => db.saveSession(prev, session));
     setTab('home');
-    setView({ name: 'home' });
-  }, [mutate]);
+    requestCloseOverlay();
+  }, [mutate, requestCloseOverlay]);
   const handleDeleteSession = useCallback((sessionId) => {
     mutate((prev) => db.deleteSession(prev, sessionId));
   }, [mutate]);
@@ -89,66 +97,58 @@ export default function App() {
     );
   }
 
-  let screen;
-  if (view.name === 'build') {
-    screen = (
-      <WorkoutBuilder
-        data={data}
-        dayKey={view.dayKey}
-        onBack={() => { setTab('home'); setView({ name: 'home' }); }}
-        onAdd={handleAddExercise}
-        onUpdate={handleUpdateExercise}
-        onDelete={handleDeleteExercise}
-        onReorder={handleReorder}
-      />
-    );
-  } else if (view.name === 'active') {
-    screen = (
-      <ActiveWorkout
-        data={data}
-        dayKey={view.dayKey}
-        onFinish={handleFinishWorkout}
-        onCancel={() => { setTab('home'); setView({ name: 'home' }); }}
-        onToggleFavoriteVideo={handleToggleFavoriteVideo}
-      />
-    );
-  } else if (tab === 'history') {
-    screen = <History data={data} onDelete={handleDeleteSession} />;
-  } else if (tab === 'progress') {
-    screen = <Progress data={data} />;
-  } else {
-    screen = (
-      <Home
-        data={data}
-        user={user}
-        onStart={(dayKey) => setView({ name: 'active', dayKey })}
-        onBuild={(dayKey) => setView({ name: 'build', dayKey })}
-        onSignOut={handleSignOut}
-      />
-    );
-  }
-
-  const showTabbar = view.name !== 'build' && view.name !== 'active';
-
   return (
     <div className="app-shell">
-      {screen}
-      {showTabbar && (
-        <nav className="tabbar">
-          <button className={`tab${tab === 'home' ? ' active' : ''}`} onClick={() => goTab('home')}>
-            <HomeIcon />
-            Home
-          </button>
-          <button className={`tab${tab === 'history' ? ' active' : ''}`} onClick={() => goTab('history')}>
-            <HistoryIcon />
-            History
-          </button>
-          <button className={`tab${tab === 'progress' ? ' active' : ''}`} onClick={() => goTab('progress')}>
-            <ChartIcon />
-            Progress
-          </button>
-        </nav>
+      <TabSwiper
+        active={tab}
+        onChange={setTab}
+        panes={[
+          <Home data={data} user={user} onStart={openActive} onBuild={openBuild} onSignOut={handleSignOut} />,
+          <History data={data} onDelete={handleDeleteSession} />,
+          <Progress data={data} />,
+        ]}
+      />
+
+      {overlay && (
+        <PushScreen closing={overlayClosing} onClosed={handleOverlayClosed}>
+          {overlay.type === 'build' && (
+            <WorkoutBuilder
+              data={data}
+              dayKey={overlay.dayKey}
+              onBack={requestCloseOverlay}
+              onAdd={handleAddExercise}
+              onUpdate={handleUpdateExercise}
+              onDelete={handleDeleteExercise}
+              onReorder={handleReorder}
+            />
+          )}
+          {overlay.type === 'active' && (
+            <ActiveWorkout
+              data={data}
+              dayKey={overlay.dayKey}
+              existingSession={overlay.session}
+              onFinish={handleFinishWorkout}
+              onCancel={requestCloseOverlay}
+              onToggleFavoriteVideo={handleToggleFavoriteVideo}
+            />
+          )}
+        </PushScreen>
       )}
+
+      <nav className="tabbar">
+        <button className={`tab${tab === 'home' ? ' active' : ''}`} onClick={() => setTab('home')}>
+          <HomeIcon />
+          Home
+        </button>
+        <button className={`tab${tab === 'history' ? ' active' : ''}`} onClick={() => setTab('history')}>
+          <HistoryIcon />
+          History
+        </button>
+        <button className={`tab${tab === 'progress' ? ' active' : ''}`} onClick={() => setTab('progress')}>
+          <ChartIcon />
+          Progress
+        </button>
+      </nav>
     </div>
   );
 }
